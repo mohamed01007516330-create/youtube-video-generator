@@ -122,15 +122,34 @@ async def scrape_threads_playwright(
                         }
                     }
 
-                    // Extract engagement numbers
+                    // Strip trailing "Translate" from content
+                    if (content) {
+                        content = content
+                            .replace(/\\s+Translate\\s*$/i, '')
+                            .replace(/\\s+Dịch\\s*$/i, '')
+                            .trim();
+                    }
+
+                    // Extract engagement numbers from leaf spans only
+                    // to avoid counting nested spans twice.
+                    // Skip time indicators (e.g. "54m", "1h", "2d").
                     const nums = [];
+                    const seen = new Set();
                     for (const s of allSpans) {
+                        if (s.querySelector('span')) continue;
                         const t = s.textContent?.trim();
-                        if (t && /^[\\d,.]+[KkMm]?$/.test(t)) {
-                            let val = parseFloat(t.replace(/,/g, ''));
-                            if (/[Kk]$/.test(t)) val *= 1000;
-                            if (/[Mm]$/.test(t)) val *= 1000000;
-                            if (val > 0) nums.push(Math.round(val));
+                        if (!t || seen.has(t)) continue;
+                        if (t === timeAgo) continue;
+                        if (/^[\\d,.]+[Kk]$/.test(t)) {
+                            const val = parseFloat(t.replace(/,/g, '')) * 1000;
+                            nums.push(Math.round(val));
+                            seen.add(t);
+                        } else if (/^[\\d,.]+$/.test(t)) {
+                            const val = parseFloat(t.replace(/,/g, ''));
+                            if (val > 0) {
+                                nums.push(Math.round(val));
+                                seen.add(t);
+                            }
                         }
                     }
 
