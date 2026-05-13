@@ -1,6 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
 import { ReactionVideo } from "./ReactionVideo";
+import { RedditStyleVideo } from "./RedditStyleVideo";
 import { ThreadsScrollVideo } from "./ThreadsScrollVideo";
 import { TrueCrimeVideo } from "./TrueCrimeVideo";
 import { YouTubeVideo } from "./YouTubeVideo";
@@ -142,6 +143,37 @@ const THREADS_SCROLL_DEFAULT: ThreadsScrollProps = {
   height: 1080,
 };
 
+const REDDIT_STYLE_DEFAULT: ThreadsScrollProps = {
+  posts: [
+    {
+      username: "gen_z_vn",
+      timeAgo: "3 giờ",
+      content: "Gen Z be like: Lương 8 triệu nhưng skincare routine 15 bước",
+      likes: 3200,
+      comments: 245,
+      reposts: 567,
+      avatarEmoji: "💅",
+      avatarColor: "#a855f7",
+      durationInSeconds: 8,
+    },
+    {
+      username: "tech_news_vn",
+      timeAgo: "5 giờ",
+      content: "Trend Doodle AI đang phủ sóng, ai cũng tạo được tranh siêu xinh!",
+      likes: 890,
+      comments: 67,
+      reposts: 123,
+      avatarEmoji: "🎨",
+      avatarColor: "#f59e0b",
+      durationInSeconds: 8,
+    },
+  ],
+  totalDurationInSeconds: 23,
+  fps: 30,
+  width: 1920,
+  height: 1080,
+};
+
 export const RemotionRoot: React.FC = () => {
   const ytFrames = Math.round(
     (DEFAULT_PROPS.totalDurationInSeconds + 4 + 5) * DEFAULT_PROPS.fps
@@ -193,6 +225,25 @@ export const RemotionRoot: React.FC = () => {
         width={THREADS_SCROLL_DEFAULT.width}
         height={THREADS_SCROLL_DEFAULT.height}
         defaultProps={THREADS_SCROLL_DEFAULT as unknown as Record<string, unknown>}
+        calculateMetadata={async ({ props }) => {
+          const p = props as unknown as ThreadsScrollProps;
+          const totalSeconds = p.totalDurationInSeconds || p.posts.reduce((s, post) => s + post.durationInSeconds, 0);
+          return {
+            durationInFrames: Math.round(totalSeconds * (p.fps || 30)),
+            fps: p.fps || 30,
+            width: p.width || 1920,
+            height: p.height || 1080,
+          };
+        }}
+      />
+      <Composition
+        id="RedditStyleVideo"
+        component={RedditStyleVideo as React.FC}
+        durationInFrames={Math.round(REDDIT_STYLE_DEFAULT.totalDurationInSeconds * REDDIT_STYLE_DEFAULT.fps)}
+        fps={REDDIT_STYLE_DEFAULT.fps}
+        width={REDDIT_STYLE_DEFAULT.width}
+        height={REDDIT_STYLE_DEFAULT.height}
+        defaultProps={REDDIT_STYLE_DEFAULT as unknown as Record<string, unknown>}
         calculateMetadata={async ({ props }) => {
           const p = props as unknown as ThreadsScrollProps;
           const totalSeconds = p.totalDurationInSeconds || p.posts.reduce((s, post) => s + post.durationInSeconds, 0);

@@ -11,6 +11,9 @@ class Settings(BaseSettings):
 
     tts_engine: str = "edge-tts"  # "edge-tts" or "f5-tts"
 
+    # Threads API settings
+    threads_access_token: str = ""
+
     # F5-TTS settings
     f5_model: str = "F5TTS_v1_Base"
     f5_ref_audio: str = ""

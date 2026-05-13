@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Threads Video Generator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0a0a14;
+      --surface: #1a1a2e;
+      --surface2: #16213e;
+      --accent: #ff4500;
+      --accent2: #ff6b35;
+      --text: #f0f0f0;
+      --text2: rgba(255,255,255,0.5);
+      --border: rgba(255,255,255,0.08);
+      --radius: 16px;
+    }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* Header */
+    .header {
+      padding: 24px 40px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .header h1 {
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header .badge {
+      background: var(--surface);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    /* Main layout */
+    .main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+    }
+    @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+
+    /* Cards */
+    .card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 30px;
+    }
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card h2 span { font-size: 22px; }
+
+    /* Form elements */
+    label {
+      display: block;
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 6px;
+      margin-top: 16px;
+    }
+    label:first-child { margin-top: 0; }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent);
+    }
+    textarea { resize: vertical; min-height: 120px; }
+    select { cursor: pointer; }
+
+    /* Style selector */
+    .style-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .style-btn {
+      padding: 10px;
+      background: var(--bg);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      color: var(--text2);
+      font-size: 13px;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+    .style-btn:hover { border-color: rgba(255,255,255,0.2); }
+    .style-btn.active {
+      border-color: var(--accent);
+      color: var(--text);
+      background: rgba(255,69,0,0.1);
+    }
+
+    /* Generate button */
+    .btn-generate {
+      width: 100%;
+      padding: 16px;
+      margin-top: 24px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+    .btn-generate:hover { opacity: 0.9; }
+    .btn-generate:active { transform: scale(0.98); }
+    .btn-generate:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Posts list */
+    .posts-list { margin-top: 12px; }
+    .post-item {
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+      border: 1px solid var(--border);
+    }
+    .post-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .post-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+    .post-username {
+      color: var(--accent2);
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .post-time {
+      color: var(--text2);
+      font-size: 12px;
+    }
+    .post-content {
+      font-size: 14px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .post-stats {
+      display: flex;
+      gap: 16px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    /* Manual post input */
+    .add-post-btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      background: transparent;
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      color: var(--text2);
+      font-size: 14px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .add-post-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    /* Progress */
+    .progress-container {
+      margin-top: 20px;
+      display: none;
+    }
+    .progress-container.active { display: block; }
+    .progress-bar {
+      height: 6px;
+      background: var(--bg);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 3px;
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+    .progress-text {
+      font-size: 13px;
+      color: var(--text2);
+      margin-top: 8px;
+    }
+
+    /* Status */
+    .status-log {
+      margin-top: 16px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 13px;
+      font-family: monospace;
+      color: var(--text2);
+    }
+    .status-log div { padding: 4px 0; }
+    .status-log .success { color: #10b981; }
+    .status-log .error { color: #ef4444; }
+
+    /* Result */
+    .result {
+      margin-top: 20px;
+      padding: 20px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 12px;
+      display: none;
+    }
+    .result.active { display: block; }
+    .result a {
+      color: #10b981;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 8px 20px;
+      background: transparent;
+      border: none;
+      color: var(--text2);
+      font-size: 14px;
+      cursor: pointer;
+      border-radius: 8px;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    .tab.active {
+      background: rgba(255,69,0,0.15);
+      color: var(--text);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Remove post button */
+    .remove-post {
+      background: none;
+      border: none;
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 16px;
+      padding: 4px;
+      margin-left: auto;
+    }
+    .remove-post:hover { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Threads Video Generator</h1>
+    <div class="badge">v0.3.0 — Auto Scrape</div>
+  </div>
+
+  <div class="main">
+    <!-- Left: Input -->
+    <div>
+      <div class="card">
+        <h2><span>🧵</span> Nguon noi dung</h2>
+
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('auto')">Tu dong (Scrape)</button>
+          <button class="tab" onclick="switchTab('manual')">Nhap thu cong</button>
+        </div>
+
+        <!-- Auto Scrape Tab -->
+        <div id="tab-auto" class="tab-content active">
+          <label>Tu khoa tim kiem tren Threads</label>
+          <input type="text" id="query" placeholder='vd: "gen z", "skincare", "iPhone 17"' />
+          <p style="color: var(--text2); font-size: 12px; margin-top: 6px;">
+            He thong se tu dong truy cap Threads, search tu khoa va lay bai viet moi nhat.
+            Khong can dang nhap hay API token.
+          </p>
+
+          <label>So bai viet (3-10)</label>
+          <input type="number" id="limit" value="7" min="3" max="10" />
+        </div>
+
+        <!-- Manual Tab -->
+        <div id="tab-manual" class="tab-content">
+          <div id="manual-posts" class="posts-list"></div>
+          <button class="add-post-btn" onclick="addManualPost()">+ Them bai viet</button>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 20px;">
+        <h2><span>🎨</span> Tuy chinh</h2>
+
+        <label>Van phong</label>
+        <div class="style-grid">
+          <button class="style-btn active" data-style="genz" onclick="selectStyle(this)">Gen Z</button>
+          <button class="style-btn" data-style="funny" onclick="selectStyle(this)">Hai huoc</button>
+          <button class="style-btn" data-style="dramatic" onclick="selectStyle(this)">Kich tinh</button>
+          <button class="style-btn" data-style="storytelling" onclick="selectStyle(this)">Ke chuyen</button>
+          <button class="style-btn" data-style="professional" onclick="selectStyle(this)">Chuyen nghiep</button>
+        </div>
+
+        <label>Giong doc</label>
+        <select id="voice">
+          <option value="vi_male">Nam (Tieng Viet)</option>
+          <option value="vi_female">Nu (Tieng Viet)</option>
+          <option value="en_male">Male (English)</option>
+          <option value="en_female">Female (English)</option>
+        </select>
+
+        <label>Video template</label>
+        <select id="composition">
+          <option value="RedditStyleVideo">Reddit Style (moi)</option>
+          <option value="ThreadsScrollVideo">Threads Scroll</option>
+        </select>
+
+        <label>Nhac nen (tuy chon)</label>
+        <input type="text" id="bgMusic" placeholder="audio/background-music.mp3" />
+      </div>
+    </div>
+
+    <!-- Right: Action + Result -->
+    <div>
+      <div class="card">
+        <h2><span>🚀</span> Tao video</h2>
+        <p style="color: var(--text2); font-size: 14px; margin-bottom: 16px;">
+          Nhap tu khoa → He thong tu len Threads search → Lay bai viet →
+          AI viet loi binh (1 API call) → Tao audio → Render video Reddit style.
+        </p>
+
+        <button class="btn-generate" id="generateBtn" onclick="generateVideo()">
+          Tao Video
+        </button>
+
+        <div class="progress-container" id="progress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText">Dang chuan bi...</div>
+        </div>
+
+        <div class="status-log" id="statusLog"></div>
+
+        <div class="result" id="result">
+          <p style="font-weight: 600; margin-bottom: 8px;">Video da hoan thanh!</p>
+          <a id="downloadLink" href="#" download>Tai video MP4</a>
+        </div>
+      </div>
+
+      <!-- Preview posts -->
+      <div class="card" style="margin-top: 20px;">
+        <h2><span>👁</span> Xem truoc bai viet</h2>
+        <div id="preview-posts" class="posts-list">
+          <p style="color: var(--text2); font-size: 14px;">
+            Bam "Tao Video" de bat dau. Bai viet se hien thi o day.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let selectedStyle = 'genz';
+    let manualPostCount = 0;
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById(`tab-${tab}`).classList.add('active');
+    }
+
+    function selectStyle(btn) {
+      document.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      selectedStyle = btn.dataset.style;
+    }
+
+    function addManualPost() {
+      manualPostCount++;
+      const container = document.getElementById('manual-posts');
+      const div = document.createElement('div');
+      div.className = 'post-item';
+      div.id = `manual-post-${manualPostCount}`;
+      div.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <strong style="font-size:13px;">Bai ${manualPostCount}</strong>
+          <button class="remove-post" onclick="this.closest('.post-item').remove()">x</button>
+        </div>
+        <input type="text" placeholder="Username" class="mp-username" style="margin-bottom:6px;font-size:13px;padding:8px 12px;" />
+        <textarea placeholder="Noi dung bai viet..." class="mp-content" style="min-height:60px;font-size:13px;padding:8px 12px;"></textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:6px;">
+          <input type="number" placeholder="Likes" class="mp-likes" value="0" style="font-size:12px;padding:6px 8px;" />
+          <input type="number" placeholder="Comments" class="mp-comments" value="0" style="font-size:12px;padding:6px 8px;" />
+          <input type="number" placeholder="Reposts" class="mp-reposts" value="0" style="font-size:12px;padding:6px 8px;" />
+        </div>
+      `;
+      container.appendChild(div);
+    }
+
+    function getManualPosts() {
+      const posts = [];
+      document.querySelectorAll('#manual-posts .post-item').forEach(item => {
+        const username = item.querySelector('.mp-username').value.trim();
+        const content = item.querySelector('.mp-content').value.trim();
+        if (content) {
+          posts.push({
+            username: username || 'anonymous',
+            content: content,
+            likes: parseInt(item.querySelector('.mp-likes').value) || 0,
+            comments: parseInt(item.querySelector('.mp-comments').value) || 0,
+            reposts: parseInt(item.querySelector('.mp-reposts').value) || 0,
+          });
+        }
+      });
+      return posts;
+    }
+
+    function log(msg, cls = '') {
+      const el = document.getElementById('statusLog');
+      const div = document.createElement('div');
+      div.className = cls;
+      div.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      el.appendChild(div);
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function setProgress(pct, text) {
+      document.getElementById('progressFill').style.width = `${pct}%`;
+      document.getElementById('progressText').textContent = text;
+    }
+
+    function renderPostsPreview(posts) {
+      const container = document.getElementById('preview-posts');
+      const avatars = ['🐸','🔥','💅','🎨','📚','👒','💪'];
+      const colors = ['#e94560','#3b82f6','#a855f7','#f59e0b','#06b6d4','#ec4899','#f97316'];
+      container.innerHTML = posts.map((p, i) => `
+        <div class="post-item">
+          <div class="post-header">
+            <div class="post-avatar" style="background:${p.avatar_color || colors[i%colors.length]}">
+              ${p.avatar_emoji || avatars[i%avatars.length]}
+            </div>
+            <span class="post-username">@${p.username}</span>
+            <span class="post-time">${p.time_ago || ''}</span>
+          </div>
+          <div class="post-content">${p.content}</div>
+          <div class="post-stats">
+            <span>❤️ ${p.likes || 0}</span>
+            <span>💬 ${p.comments || 0}</span>
+            <span>🔄 ${p.reposts || 0}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function generateVideo() {
+      const btn = document.getElementById('generateBtn');
+      const progress = document.getElementById('progress');
+      const result = document.getElementById('result');
+
+      btn.disabled = true;
+      btn.textContent = 'Dang tao...';
+      progress.classList.add('active');
+      result.classList.remove('active');
+      document.getElementById('statusLog').innerHTML = '';
+
+      const isManual = document.getElementById('tab-manual').classList.contains('active');
+
+      const body = {
+        style: selectedStyle,
+        voice: document.getElementById('voice').value,
+        composition: document.getElementById('composition').value,
+        background_music: document.getElementById('bgMusic').value.trim(),
+        language: document.getElementById('voice').value.startsWith('vi') ? 'vi' : 'en',
+      };
+
+      if (isManual) {
+        body.manual_posts = getManualPosts();
+        if (body.manual_posts.length === 0) {
+          alert('Vui long them it nhat 1 bai viet!');
+          btn.disabled = false;
+          btn.textContent = 'Tao Video';
+          progress.classList.remove('active');
+          return;
+        }
+      } else {
+        body.query = document.getElementById('query').value.trim();
+        body.limit = parseInt(document.getElementById('limit').value) || 7;
+        if (!body.query) {
+          alert('Vui long nhap tu khoa tim kiem!');
+          btn.disabled = false;
+          btn.textContent = 'Tao Video';
+          progress.classList.remove('active');
+          return;
+        }
+      }
+
+      try {
+        log('Bat dau pipeline...');
+        setProgress(10, 'Dang lay bai viet tu Threads...');
+
+        const resp = await fetch('/api/threads-pipeline', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        if (!resp.ok) {
+          const err = await resp.json();
+          throw new Error(err.detail || 'Pipeline that bai');
+        }
+
+        const data = await resp.json();
+
+        log(`Tim thay ${data.posts.length} bai viet`, 'success');
+        setProgress(30, 'Dang tao loi binh...');
+        renderPostsPreview(data.posts);
+
+        log(`Tao ${data.narrations.length} doan loi binh`, 'success');
+        setProgress(50, 'Dang tao audio TTS...');
+
+        log(`Tao ${data.audio_files.length} file audio`, 'success');
+        setProgress(70, 'Dang render video...');
+
+        if (data.video_file) {
+          setProgress(100, 'Hoan thanh!');
+          log('Video da render thanh cong!', 'success');
+
+          const filename = data.video_file.split('/').pop();
+          document.getElementById('downloadLink').href = `/api/download/${filename}`;
+          document.getElementById('downloadLink').textContent = `Tai ${filename}`;
+          result.classList.add('active');
+        } else {
+          setProgress(100, 'Hoan thanh (khong co video)');
+          log('Pipeline hoan thanh (skip video render)', 'success');
+        }
+      } catch (err) {
+        log(`Loi: ${err.message}`, 'error');
+        setProgress(0, 'That bai');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Tao Video';
+      }
+    }
+  </script>
+</body>
+</html>
