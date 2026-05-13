@@ -304,7 +304,7 @@
 <body>
   <div class="header">
     <h1>Threads Video Generator</h1>
-    <div class="badge">v0.3.0 — Auto Scrape</div>
+    <div class="badge">v0.4.0 — Auto Scrape + Memes</div>
   </div>
 
   <div class="main">
@@ -366,6 +366,17 @@
 
         <label>Nhac nen (tuy chon)</label>
         <input type="text" id="bgMusic" placeholder="audio/background-music.mp3" />
+
+        <label style="margin-top:20px;display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="includeMemes" style="width:auto;cursor:pointer;" />
+          <span style="font-size:14px;color:var(--text);">Them meme tu Pinterest</span>
+        </label>
+        <div id="memeOptions" style="display:none;margin-top:8px;">
+          <input type="text" id="memeKeyword" placeholder="Tu khoa meme (de trong = tu dong theo keyword chinh)" />
+          <p style="color:var(--text2);font-size:12px;margin-top:4px;">
+            He thong se tu dong lay anh meme tu Pinterest cho moi bai viet.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -412,6 +423,10 @@
   <script>
     let selectedStyle = 'genz';
     let manualPostCount = 0;
+
+    document.getElementById('includeMemes').addEventListener('change', function() {
+      document.getElementById('memeOptions').style.display = this.checked ? 'block' : 'none';
+    });
 
     function switchTab(tab) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -494,6 +509,7 @@
             <span class="post-time">${p.time_ago || ''}</span>
           </div>
           <div class="post-content">${p.content}</div>
+          ${p.meme_image ? `<div style="margin-top:8px;"><img src="/output/memes/${p.meme_image.split('/').pop()}" style="max-width:100%;max-height:200px;border-radius:8px;object-fit:contain;" onerror="this.style.display='none'" /></div>` : ''}
           <div class="post-stats">
             <span>❤️ ${p.likes || 0}</span>
             <span>💬 ${p.comments || 0}</span>
@@ -523,6 +539,12 @@
         background_music: document.getElementById('bgMusic').value.trim(),
         language: document.getElementById('voice').value.startsWith('vi') ? 'vi' : 'en',
       };
+
+      // Meme options
+      body.include_memes = document.getElementById('includeMemes').checked;
+      if (body.include_memes) {
+        body.meme_keyword = document.getElementById('memeKeyword').value.trim();
+      }
 
       if (isManual) {
         body.manual_posts = getManualPosts();

@@ -2,6 +2,7 @@ import React from "react";
 import {
   AbsoluteFill,
   Audio,
+  Img,
   Sequence,
   interpolate,
   spring,
@@ -188,6 +189,30 @@ const RedditPostCard: React.FC<{
         >
           {post.content}
         </div>
+
+        {/* Meme image (from Pinterest) */}
+        {post.memeImage && (
+          <div
+            style={{
+              marginTop: 20,
+              display: "flex",
+              justifyContent: "center",
+              opacity: contentReveal,
+              transform: `scale(${interpolate(contentReveal, [0, 1], [0.9, 1])})`,
+            }}
+          >
+            <Img
+              src={staticFile(post.memeImage)}
+              style={{
+                maxWidth: 400,
+                maxHeight: 300,
+                borderRadius: 16,
+                border: "2px solid rgba(255, 69, 0, 0.2)",
+                objectFit: "contain",
+              }}
+            />
+          </div>
+        )}
 
         {/* Engagement stats */}
         <div

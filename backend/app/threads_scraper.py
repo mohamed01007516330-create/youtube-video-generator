@@ -35,6 +35,7 @@ class ThreadsPost:
     avatar_emoji: str = ""
     avatar_color: str = "#6366f1"
     media_url: str = ""
+    meme_image: str = ""
 
 
 async def scrape_threads_playwright(

@@ -46,6 +46,10 @@ app.add_middleware(
 if os.path.exists(settings.output_dir):
     app.mount("/output", StaticFiles(directory=settings.output_dir), name="output")
 
+MEME_DIR = Path(__file__).parent.parent.parent / "video" / "public" / "memes"
+MEME_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/memes", StaticFiles(directory=str(MEME_DIR)), name="memes")
+
 
 @app.get("/health")
 async def health_check():
@@ -179,6 +183,8 @@ class ThreadsPipelineRequest(BaseModel):
     background_music: str = Field(default="")
     manual_posts: list[dict] | None = Field(default=None)
     skip_video: bool = Field(default=False)
+    include_memes: bool = Field(default=False, description="Fetch memes from Pinterest")
+    meme_keyword: str = Field(default="", description="Custom keyword for Pinterest meme search")
 
 
 @app.post("/api/threads-pipeline")
@@ -194,6 +200,8 @@ async def api_threads_pipeline(request: ThreadsPipelineRequest):
             composition=request.composition,
             background_music=request.background_music,
             skip_video=request.skip_video,
+            include_memes=request.include_memes,
+            meme_keyword=request.meme_keyword,
         )
         return result
     except ValueError as e:

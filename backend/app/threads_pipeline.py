@@ -12,6 +12,7 @@ from pathlib import Path
 
 from .config import settings
 from .narration_generator import generate_narrations
+from .pinterest_scraper import scrape_pinterest_memes
 from .threads_scraper import ThreadsPost, fetch_threads_posts
 from .tts_service import synthesize_edge_tts
 
@@ -89,6 +90,8 @@ def render_threads_video(
         }
         if post.media_url:
             post_data["postImage"] = post.media_url
+        if post.meme_image:
+            post_data["memeImage"] = post.meme_image
         posts_data.append(post_data)
 
     total_duration = sum(p["durationInSeconds"] for p in posts_data) + 5
@@ -147,6 +150,8 @@ async def run_threads_pipeline(
     background_music: str = "",
     output_filename: str = "threads_video.mp4",
     skip_video: bool = False,
+    include_memes: bool = False,
+    meme_keyword: str = "",
 ) -> dict:
     """
     Run the full Threads-to-Video pipeline.
@@ -163,6 +168,20 @@ async def run_threads_pipeline(
         query=query, limit=limit, manual_posts=manual_posts
     )
     logger.info(f"  Found {len(posts)} posts")
+
+    # Step 1.5: Fetch memes from Pinterest (if enabled)
+    if include_memes:
+        meme_query = meme_keyword or query or "funny"
+        logger.info(f"STEP 1.5: Fetching memes from Pinterest ('{meme_query}')...")
+        meme_images = await scrape_pinterest_memes(
+            query=meme_query, limit=len(posts)
+        )
+        logger.info(f"  Found {len(meme_images)} meme images")
+        for i, post in enumerate(posts):
+            if i < len(meme_images):
+                post.meme_image = meme_images[i]
+    else:
+        logger.info("Memes: disabled")
 
     # Step 2: Generate narrations
     logger.info(f"STEP 2: Generating narrations (style: {style})...")

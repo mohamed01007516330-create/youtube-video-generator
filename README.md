@@ -5,6 +5,7 @@ AI-powered multilingual YouTube video generator using **DeepSeek AI**, **F5-TTS/
 ## Features
 
 - **Threads-to-Video Pipeline** — Search Threads, auto-generate narration, render Reddit-style videos
+- **Pinterest Meme Integration** — Auto-fetch relevant memes from Pinterest and overlay them in videos
 - **Web UI Dashboard** — Simple web interface to create videos without coding
 - **Customizable Narration Styles** — Gen Z, professional, funny, dramatic, storytelling
 - **AI Script Generation** — DeepSeek generates engaging video scripts in any language
@@ -114,14 +115,15 @@ uvicorn app.main:app --reload --port 8000
 ## Architecture
 
 ```
-Threads Search → Fetch Posts → DeepSeek (Narration) → Edge-TTS (Audio) → Remotion (Video) → MP4
+Threads Search → Fetch Posts → Pinterest Memes (optional) → DeepSeek (Narration) → Edge-TTS (Audio) → Remotion (Video) → MP4
 ```
 
 ### Components
 
 | Component | Technology | Purpose |
 |-----------|-----------|---------|
-| Threads Scraper | Threads API / Manual | Fetch posts from Threads |
+| Threads Scraper | Playwright / Manual | Fetch posts from Threads |
+| Pinterest Scraper | Playwright | Fetch meme images from Pinterest |
 | Narration Generator | DeepSeek API | Rewrite content in chosen style |
 | TTS Engine | Edge-TTS / F5-TTS | Text-to-speech conversion |
 | Video Engine | Remotion (React) | Programmatic video rendering |
