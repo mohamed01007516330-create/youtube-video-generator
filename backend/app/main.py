@@ -1,11 +1,13 @@
 import json
 import logging
 import os
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 from .config import settings
 from .schemas import (
@@ -20,6 +22,7 @@ from .schemas import (
 )
 from .script_generator import generate_script
 from .subtitle_generator import generate_srt
+from .threads_pipeline import run_threads_pipeline
 from .tts_service import synthesize
 from .video_renderer import render_video
 
@@ -28,8 +31,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="YouTube Video Generator API",
-    description="AI-powered multilingual YouTube video generator",
-    version="0.1.0",
+    description="AI-powered multilingual YouTube video generator with Threads integration",
+    version="0.2.0",
 )
 
 app.add_middleware(
@@ -162,9 +165,60 @@ async def api_pipeline(request: PipelineRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# --- Threads Pipeline ---
+
+
+class ThreadsPipelineRequest(BaseModel):
+    query: str = Field(default="", description="Threads search keyword")
+    limit: int = Field(default=7, ge=3, le=10)
+    search_type: str = Field(default="TOP")
+    style: str = Field(default="genz", description="Narration style")
+    voice: str = Field(default="vi_male")
+    language: str = Field(default="vi")
+    composition: str = Field(default="RedditStyleVideo")
+    background_music: str = Field(default="")
+    manual_posts: list[dict] | None = Field(default=None)
+    skip_video: bool = Field(default=False)
+
+
+@app.post("/api/threads-pipeline")
+async def api_threads_pipeline(request: ThreadsPipelineRequest):
+    try:
+        result = await run_threads_pipeline(
+            query=request.query,
+            limit=request.limit,
+            style=request.style,
+            voice=request.voice,
+            language=request.language,
+            manual_posts=request.manual_posts,
+            composition=request.composition,
+            background_music=request.background_music,
+            skip_video=request.skip_video,
+        )
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Threads pipeline failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/download/{filename}")
 async def download_file(filename: str):
     file_path = os.path.join(settings.output_dir, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
     return FileResponse(file_path, filename=filename)
+
+
+# --- Web UI ---
+
+STATIC_DIR = Path(__file__).parent / "static"
+
+
+@app.get("/", response_class=HTMLResponse)
+async def serve_ui():
+    index_file = STATIC_DIR / "index.html"
+    if index_file.exists():
+        return HTMLResponse(content=index_file.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>YouTube Video Generator API</h1><p>UI not found</p>")
