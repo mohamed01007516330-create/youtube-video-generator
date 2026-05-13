@@ -304,7 +304,7 @@
 <body>
   <div class="header">
     <h1>Threads Video Generator</h1>
-    <div class="badge">v0.2.0 — Reddit Style</div>
+    <div class="badge">v0.3.0 — Auto Scrape</div>
   </div>
 
   <div class="main">
@@ -314,23 +314,21 @@
         <h2><span>🧵</span> Nguon noi dung</h2>
 
         <div class="tabs">
-          <button class="tab active" onclick="switchTab('api')">Threads API</button>
+          <button class="tab active" onclick="switchTab('auto')">Tu dong (Scrape)</button>
           <button class="tab" onclick="switchTab('manual')">Nhap thu cong</button>
         </div>
 
-        <!-- API Tab -->
-        <div id="tab-api" class="tab-content active">
-          <label>Tu khoa tim kiem</label>
-          <input type="text" id="query" placeholder='vd: "gen z", "tin tuc", "review"' />
+        <!-- Auto Scrape Tab -->
+        <div id="tab-auto" class="tab-content active">
+          <label>Tu khoa tim kiem tren Threads</label>
+          <input type="text" id="query" placeholder='vd: "gen z", "skincare", "iPhone 17"' />
+          <p style="color: var(--text2); font-size: 12px; margin-top: 6px;">
+            He thong se tu dong truy cap Threads, search tu khoa va lay bai viet moi nhat.
+            Khong can dang nhap hay API token.
+          </p>
 
-          <label>So bai viet (5-10)</label>
+          <label>So bai viet (3-10)</label>
           <input type="number" id="limit" value="7" min="3" max="10" />
-
-          <label>Sap xep</label>
-          <select id="searchType">
-            <option value="TOP">Top (pho bien nhat)</option>
-            <option value="RECENT">Moi nhat</option>
-          </select>
         </div>
 
         <!-- Manual Tab -->
@@ -376,8 +374,8 @@
       <div class="card">
         <h2><span>🚀</span> Tao video</h2>
         <p style="color: var(--text2); font-size: 14px; margin-bottom: 16px;">
-          Nhap tu khoa hoac them bai viet thu cong, chon van phong, roi bam "Tao Video".
-          Pipeline se tu dong: Lay bai → Viet loi binh → Tao audio → Render video.
+          Nhap tu khoa → He thong tu len Threads search → Lay bai viet →
+          AI viet loi binh (1 API call) → Tao audio → Render video Reddit style.
         </p>
 
         <button class="btn-generate" id="generateBtn" onclick="generateVideo()">
@@ -418,7 +416,7 @@
     function switchTab(tab) {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+      event.target.classList.add('active');
       document.getElementById(`tab-${tab}`).classList.add('active');
     }
 
@@ -538,7 +536,6 @@
       } else {
         body.query = document.getElementById('query').value.trim();
         body.limit = parseInt(document.getElementById('limit').value) || 7;
-        body.search_type = document.getElementById('searchType').value;
         if (!body.query) {
           alert('Vui long nhap tu khoa tim kiem!');
           btn.disabled = false;

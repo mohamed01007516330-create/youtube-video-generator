@@ -1,6 +1,6 @@
 [project]
 name = "youtube-video-generator"
-version = "0.1.0"
+version = "0.3.0"
 description = "AI-powered multilingual YouTube video generator using DeepSeek, F5-TTS, and Remotion"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -17,6 +17,7 @@ dependencies = [
     "pyyaml>=6.0.0",
     "aiofiles>=24.0.0",
     "python-multipart>=0.0.9",
+    "playwright>=1.40.0",
 ]
 
 [project.optional-dependencies]
